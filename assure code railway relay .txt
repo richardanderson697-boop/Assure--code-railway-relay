@@ -1,0 +1,32 @@
+const express = require('express');
+const app = express();
+app.use(express.json());
+
+// This is the "Public Door" for Google AI Studio
+app.post('/incoming', async (req, res) => {
+    console.log("Law detected by ReguGuard:", req.body);
+
+    try {
+        // This is the "Private Handshake" with Assure Code
+        const response = await fetch('https://assurecodes.com/api/events', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-api-key': process.env.ASSURE_CODE_API_KEY, // Stored in Railway Variables
+                'User-Agent': 'Assure-Code-Relay-Bot'
+            },
+            body: JSON.stringify(req.body)
+        });
+
+        const data = await response.text();
+        console.log("Assure Code Brain Response:", data);
+        res.status(200).send("Relay Success");
+        
+    } catch (error) {
+        console.error("Relay Failed:", error);
+        res.status(500).send("Relay Error");
+    }
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Relay active on port ${PORT}`));
