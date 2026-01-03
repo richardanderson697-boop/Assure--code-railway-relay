@@ -1,30 +1,33 @@
 const express = require('express');
+const cors = require('cors'); // He might need to run 'npm install cors'
 const app = express();
+
+app.use(cors()); // This tells Google AI Studio "I trust you"
 app.use(express.json());
 
-// This is the "Public Door" for Google AI Studio
 app.post('/incoming', async (req, res) => {
-    console.log("Law detected by ReguGuard:", req.body);
+    console.log("--- New Law Received from Google ---");
+    console.log("Data:", JSON.stringify(req.body));
 
     try {
-        // This is the "Private Handshake" with Assure Code
         const response = await fetch('https://assurecodes.com/api/events', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'x-api-key': process.env.ASSURE_CODE_API_KEY, // Stored in Railway Variables
-                'User-Agent': 'Assure-Code-Relay-Bot'
+                'x-api-key': process.env.ASSURE_CODE_API_KEY,
+                'User-Agent': 'Mozilla/5.0' // Some Replit apps block bot-like agents
             },
             body: JSON.stringify(req.body)
         });
 
-        const data = await response.text();
-        console.log("Assure Code Brain Response:", data);
+        const resultText = await response.text();
+        console.log("Assure Code Status:", response.status);
+        console.log("Assure Code Body:", resultText);
+
         res.status(200).send("Relay Success");
-        
     } catch (error) {
-        console.error("Relay Failed:", error);
-        res.status(500).send("Relay Error");
+        console.error("Relay CRASHED:", error.message);
+        res.status(500).send("Relay Error: " + error.message);
     }
 });
 
