@@ -2,36 +2,41 @@ const express = require('express');
 const cors = require('cors');
 const app = express();
 
-// 1. Permissive CORS (The "Open Door" policy)
-app.use(cors({ origin: '*', methods: ['GET', 'POST', 'OPTIONS'] }));
+// 1. Tell EVERYONE they are allowed (Nuclear CORS)
+app.use(cors({ origin: '*', credentials: true }));
 app.use(express.json());
 
-// 2. Explicitly handle the "Scout" (Preflight)
-app.options('*', cors());
-
-app.post('/incoming', async (req, res) => {
-    console.log("--- Payload Received ---", req.body);
-
-    try {
-        // USE THE DIRECT REPLIT URL HERE (The .replit.app one)
-        const response = await fetch('https://assure-code.yourusername.replit.app/api/events', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'x-api-key': process.env.ASSURE_CODE_API_KEY,
-                'User-Agent': 'Mozilla/5.0' 
-            },
-            body: JSON.stringify(req.body)
-        });
-
-        const status = response.status;
-        res.status(200).send(`Forwarded. Replit Status: ${status}`);
-        console.log("Success: Forwarded to Replit");
-
-    } catch (err) {
-        console.error("Relay Error:", err.message);
-        res.status(500).send("Relay Failed");
-    }
+// 2. High-five the "Scout" (Preflight)
+app.options('*', (req, res) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, x-api-key');
+  res.sendStatus(204);
 });
 
-app.listen(process.env.PORT || 3000);
+app.post('/incoming', async (req, res) => {
+  console.log("-> Google is calling...");
+
+  try {
+    // USE THE DIRECT REPLIT URL (.replit.app)
+    const response = await fetch('https://assure-code.yourusername.replit.app/api/events', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': process.env.ASSURE_CODE_API_KEY,
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0' // Pretening to be a PC
+      },
+      body: JSON.stringify(req.body)
+    });
+
+    const status = response.status;
+    console.log("-> Replit responded with:", status);
+    res.status(200).send(`Cycle Complete: ${status}`);
+
+  } catch (err) {
+    console.error("-> CRASHED:", err.message);
+    res.status(500).send("Relay Error: " + err.message);
+  }
+});
+
+app.listen(process.env.PORT || 3000, '0.0.0.0');
